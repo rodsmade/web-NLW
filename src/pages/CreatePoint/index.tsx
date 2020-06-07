@@ -1,5 +1,5 @@
-import React, { useEffect, useState, ChangeEvent } from 'react'
-import { Link } from 'react-router-dom'
+import React, { useEffect, useState, ChangeEvent, FormEvent } from 'react'
+import { Link, useHistory } from 'react-router-dom'
 import { FiArrowLeft } from 'react-icons/fi'
 import { TileLayer, Marker, Map } from 'react-leaflet'
 import api from '../../services/api'
@@ -49,6 +49,8 @@ const CreatePoint = () => {
     const [cidadeSelecionada, setCidadeSelecionada] = useState('0');
     const [coordenadaSelecionada, setCoordenadaSelecionada] = useState<[number, number]>([0,0]);
     const [itensSelecionados, setItensSelecionados] = useState<number[]>([]);
+
+    const history = useHistory();
 
     useEffect(() => {
         navigator.geolocation.getCurrentPosition(position => {
@@ -118,6 +120,34 @@ const CreatePoint = () => {
             setItensSelecionados([...itensSelecionados, id]);
         }
     }
+    async function submeteFormulario(evento: FormEvent){
+        evento.preventDefault();
+
+        const { nome, email, nagazap } = dadosFormulario;
+        const estado = ufSelecionada;
+        const cidade = cidadeSelecionada;
+        const [latitude, longitude] = coordenadaSelecionada;
+        const itens = itensSelecionados;
+        const corpoDaRequisição = {
+            // ATENCAO POIS AQUI ONTA O JSON Q TEM Q TER O NOME DOS CAMPOS EXATAMENTE IGUAL AO QUE A API ESPERA
+            nome,
+            email,
+            nagazap,
+            unidade_federativa: estado,
+            cidade,
+            latitude,
+            longitude,
+            itens,
+            rua: "     ",
+	        numero: "0",
+        }
+
+        await api.post('pontos',corpoDaRequisição);
+
+        alert("Ponto de coleta criado! (mas ñ tenho ctz eita)")
+
+        history.push('/');
+    }
 
     return(
         <div id="page-create-point">
@@ -130,7 +160,7 @@ const CreatePoint = () => {
                 </Link>
             </header>
 
-            <form>
+            <form onSubmit={submeteFormulario}>
                 <h1>Cadastro do <br></br> ponto de coleta</h1>
 
                 <fieldset>
