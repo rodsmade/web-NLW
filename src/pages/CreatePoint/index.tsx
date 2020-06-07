@@ -36,10 +36,26 @@ const CreatePoint = () => {
     const [items, setItems] = useState<Item[]>([]); // um estado, +- global var. Importante ser declarada right after component! 
     const [ufs, setUfs] = useState<string[]>([]); // veio de um obj. IBGEUFResponse, mas dps de filtrar é só um array de strings
     const [cidades, setCidades] = useState<string[]>([]);
+
+    const [coordenadaInicial, setCoordenadaInicial] = useState<[number, number]>([0,0]);
+
+    const [dadosFormulario, setDadosFormulario] = useState({
+        nome: '',
+        email: '',
+        nagazap: '',
+    });
+    
     const [ufSelecionada, setUfSelecionada] = useState('0');
     const [cidadeSelecionada, setCidadeSelecionada] = useState('0');
-    const [coordenadaSelecionada, sertCoordenadaSelecionada] = useState<[number, number]>([0,0]);
+    const [coordenadaSelecionada, setCoordenadaSelecionada] = useState<[number, number]>([0,0]);
+    const [itensSelecionados, setItensSelecionados] = useState<number[]>([]);
 
+    useEffect(() => {
+        navigator.geolocation.getCurrentPosition(position => {
+            const { latitude, longitude } = position.coords;
+            setCoordenadaInicial([latitude, longitude]);
+        });
+    }, []);
     useEffect(() => {
         api.get('itens')
             .then(response => {
@@ -81,10 +97,26 @@ const CreatePoint = () => {
         setCidadeSelecionada(cidadeSelecionada);
     }
     function guardaCoordenadasDoMapa(evento: LeafletMouseEvent){    
-        sertCoordenadaSelecionada([
+        setCoordenadaSelecionada([
             evento.latlng.lat,
             evento.latlng.lng
         ]);
+    }
+    function guardaValorInseridoEmCampo(evento: ChangeEvent<HTMLInputElement>){
+        const {name, value} = evento.target;
+
+        setDadosFormulario({ ...dadosFormulario, [name]: value });
+    }
+    function guardaItemSelecionado(id: number){
+        // lógica para selecionar/desselecionar os botões de itens
+        const jaEstaSelecionado = itensSelecionados.findIndex(item => item === id);
+
+        if(jaEstaSelecionado >= 0){
+            const filteredItems = itensSelecionados.filter(item => item !== id);
+            setItensSelecionados(filteredItems);
+        } else {
+            setItensSelecionados([...itensSelecionados, id]);
+        }
     }
 
     return(
@@ -107,11 +139,13 @@ const CreatePoint = () => {
                     </legend>
 
                     <div className="field">
-                        <label htmlFor="name">Nome da entidade</label>
+                        <label htmlFor="nome">Nome da entidade</label>
                         <input
                             type="text"
-                            name="name"
-                            id="name"/>
+                            name="nome"
+                            id="nome"
+                            onChange={guardaValorInseridoEmCampo}    
+                        />
                     </div>
 
                     <div className="field-group">
@@ -120,7 +154,9 @@ const CreatePoint = () => {
                             <input
                                 type="email"
                                 name="email"
-                                id="email"/>
+                                id="email"
+                                onChange={guardaValorInseridoEmCampo}  
+                            />
                         </div>
 
                         <div className="field">
@@ -128,7 +164,9 @@ const CreatePoint = () => {
                             <input
                                 type="text"
                                 name="nagazap"
-                                id="nagazap"/>
+                                id="nagazap"
+                                onChange={guardaValorInseridoEmCampo}  
+                            />
                         </div>
                     </div>
                 </fieldset>
@@ -139,7 +177,7 @@ const CreatePoint = () => {
                         <span>Selecione o endereço no mapa</span>
                     </legend>
 
-                    <Map center={[-23.5468342,-46.6117453]} zoom={15} onClick={guardaCoordenadasDoMapa}>
+                    <Map center={coordenadaInicial} zoom={15} onClick={guardaCoordenadasDoMapa}>
                         <TileLayer
                             attribution='&amp;copy <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
                             url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
@@ -188,7 +226,11 @@ const CreatePoint = () => {
 
                     <ul className="items-grid">
                         {items.map(item => (
-                            <li key={item.id} /*Each child in a list should have a unique "key" prop.*/>  
+                            <li
+                                key={item.id}
+                                onClick={() => guardaItemSelecionado(item.id)} /*Each child in a list should have a unique "key" prop.*/
+                                className={itensSelecionados.includes(item.id) ? 'selected' : ''}
+                            >  
                                 <img src={item.url_imagem} alt={item.titulo}/>
                                 <span>{item.titulo}</span>
                             </li>
