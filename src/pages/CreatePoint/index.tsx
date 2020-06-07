@@ -1,8 +1,9 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { FiArrowLeft } from 'react-icons/fi'
 import { TileLayer, Marker, Map } from 'react-leaflet'
 import api from '../../services/api'
+import axios from 'axios'
 
 import './styles.css'
 
@@ -14,6 +15,12 @@ interface Item{
     url_imagem: string;
 }
 
+interface IBGEUFResponse{
+    id: number;
+    sigla: string;
+    nome: string;
+}
+
 const CreatePoint = () => {
 
     /* ATENSSAU 
@@ -21,17 +28,27 @@ const CreatePoint = () => {
     o tipo da variável que vai ser armazenada ali dentro. 
     Para isso, crio uma interface (acima) e implemento na função useState o generic com a interface
     */
-    const [items, setItems] = useState<Item[]>([]);// um estado, +- global var. Importante ser declarada right after component! 
+    const [items, setItems] = useState<Item[]>([]); // um estado, +- global var. Importante ser declarada right after component! 
+    const [ufs, setUfs] = useState<string[]>([]); // veio de um obj. IBGEUFResponse, mas dps de filtrar é só um array de strings
 
     useEffect(() => {
         api.get('itens')
             .then(response => {
-                setItems(response.data) // response só existe dentro dessa função. "variáveis globais" nesse caso são estados.
+                setItems(response.data); // response só existe dentro dessa função. "variáveis globais" nesse caso são estados.
             })
     }, [])  /* conceito de Estado do JS: o colchetes recebe o gatilho para atualizar o estado do useEffect.
             Vazio significa que independente de qqr alteração no componente CreatePoint,
             o q tá dentro das chaves vai ser carregado uma única vez, assim q a página for carregada.
             */
+
+    useEffect(() => {
+    axios.get<IBGEUFResponse[]>('https://servicodados.ibge.gov.br/api/v1/localidades/estados')
+        .then(response => {
+            const siglas = response.data.map(uf => uf.sigla); // meio que filtrei a response, só me interessam as siglas
+            setUfs(siglas);
+        })
+    }, [])
+
     return(
         <div id="page-create-point">
             <header>
@@ -97,6 +114,9 @@ const CreatePoint = () => {
                             <label htmlFor="uf">Estado (UF)</label>
                             <select name="uf" id="uf">
                                 <option value="0">Selecione uma UF</option>
+                                {ufs.map(sigla => (
+                                    <option key ={sigla}value={sigla}>{sigla}</option>
+                                ))}
                             </select>
                         </div>
 
@@ -118,9 +138,9 @@ const CreatePoint = () => {
                     <ul className="items-grid">
                         {items.map(item => (
                             <li key={item.id} /*Each child in a list should have a unique "key" prop.*/>  
-                            <img src={item.url_imagem} alt={item.titulo}/>
-                            <span>{item.titulo}</span>
-                        </li>
+                                <img src={item.url_imagem} alt={item.titulo}/>
+                                <span>{item.titulo}</span>
+                            </li>
                         ))}
                     </ul>
 
