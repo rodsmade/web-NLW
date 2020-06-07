@@ -4,7 +4,11 @@ import { FiUploadCloud } from 'react-icons/fi'
 
 import './styles.css'
 
-const Dropzone = () => {
+interface minhaPropriedadeOnFileUpload {
+    onFileUpload: (arquivo: File) => void;
+}
+
+const Dropzone: React.FC<minhaPropriedadeOnFileUpload> = ({onFileUpload}) => {
 
   const [selectedFileURL, setSelectedFileURL] = useState('');
 
@@ -14,8 +18,8 @@ const Dropzone = () => {
     const fileURL = URL.createObjectURL(file);
 
     setSelectedFileURL(fileURL);
-
-  }, [])
+    onFileUpload(file);
+  }, [onFileUpload])
   const {getRootProps, getInputProps, isDragActive} = useDropzone({
         onDrop,
         accept: 'image/*'

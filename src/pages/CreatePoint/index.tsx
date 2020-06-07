@@ -51,6 +51,7 @@ const CreatePoint = () => {
     const [cidadeSelecionada, setCidadeSelecionada] = useState('0');
     const [coordenadaSelecionada, setCoordenadaSelecionada] = useState<[number, number]>([0,0]);
     const [itensSelecionados, setItensSelecionados] = useState<number[]>([]);
+    const [arquivoSelecionado, setArquivoSelecionado] = useState<File>();
 
     const history = useHistory();
 
@@ -130,19 +131,37 @@ const CreatePoint = () => {
         const cidade = cidadeSelecionada;
         const [latitude, longitude] = coordenadaSelecionada;
         const itens = itensSelecionados;
-        const corpoDaRequisição = {
-            // ATENCAO POIS AQUI ONTA O JSON Q TEM Q TER O NOME DOS CAMPOS EXATAMENTE IGUAL AO QUE A API ESPERA
-            nome,
-            email,
-            nagazap,
-            unidade_federativa: estado,
-            cidade,
-            latitude,
-            longitude,
-            itens,
-            rua: "     ",
-	        numero: "0",
+        
+        const corpoDaRequisição = new FormData();   // essa classe aceita o multipart/form-data formato de requisição (ñ é mais JSON)
+
+        corpoDaRequisição.append('nome',nome);
+        corpoDaRequisição.append('email',email);
+        corpoDaRequisição.append('nagazap',nagazap);
+        corpoDaRequisição.append('unidade_federativa', estado);
+        corpoDaRequisição.append('cidade',cidade);
+        corpoDaRequisição.append('latitude',String(latitude));
+        corpoDaRequisição.append('longitude',String(longitude));
+        corpoDaRequisição.append('itens',itens.join(','));
+        corpoDaRequisição.append('rua',"     ");
+        corpoDaRequisição.append('numero', '0');
+
+        if(arquivoSelecionado){
+            corpoDaRequisição.append('imagem',arquivoSelecionado);
         }
+
+        // const corpoDaRequisição = {
+        //     // ATENCAO POIS AQUI MONTA O JSON Q TEM Q TER O NOME DOS CAMPOS EXATAMENTE IGUAL AO QUE A API ESPERA
+        //     nome,
+        //     email,
+        //     nagazap,
+        //     unidade_federativa: estado,
+        //     cidade,
+        //     latitude,
+        //     longitude,
+        //     itens,
+        //     rua: "     ",
+	    //     numero: "0",
+        // }
 
         await api.post('pontos',corpoDaRequisição);
 
@@ -165,7 +184,7 @@ const CreatePoint = () => {
             <form onSubmit={submeteFormulario}>
                 <h1>Cadastro do <br></br> ponto de coleta</h1>
 
-                <Dropzone />
+                <Dropzone onFileUpload={setArquivoSelecionado}/>
 
                 <fieldset>
                     <legend>
